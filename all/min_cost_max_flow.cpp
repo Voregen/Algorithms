@@ -1,89 +1,114 @@
-const int maxnodes = 1e4 + 5;
+#include <bits/stdc++.h>
+//#include <ext/pb_ds/assoc_container.hpp>
+//#include <ext/pb_ds/tree_policy.hpp>
 
-int nodes = maxnodes;
-int prio[maxnodes], curflow[maxnodes], prevedge[maxnodes], prevnode[maxnodes], q[maxnodes], pot[maxnodes];
-bool inqueue[maxnodes];
+#pragma GCC optimize("Ofast")
+//#pragma GCC target("sse,sse2,sse3,ssse3,sse4,popcnt,abm,mmx,tune=native")
+#pragma GCC optimize("unroll-loops")
 
-struct Edge {
-    int to, f, cap, cost, rev;
+using namespace std;
+
+//using namespace __gnu_pbds;
+
+#define pb push_back
+#define F first
+#define S second
+#define ll long long
+#define ld double long
+#define ull unsigned long long
+#define endl '\n'
+
+const int N = 1e6 + 36;
+const ll INF = 1e9 + 7;
+const int MOD = 1e9 + 7;
+
+mt19937 gen(19937);
+
+//tree < pair < int, int >, null_type, less < pair < int, int > >, rb_tree_tag, tree_order_statistics_node_update > st;
+
+struct edge {
+    int v, to, f, c, cap, obr;
 };
 
-vector<Edge> graph[maxnodes];
+vector < edge > E;
+int dist[N], bat[N], n, m;
 
-void addEdge(int s, int t, int cap, int cost) {
-    Edge a = {t, 0, cap, cost, graph[t].size()};
-    Edge b = {s, 0, 0, -cost, graph[s].size()};
-    graph[s].push_back(a);
-    graph[t].push_back(b);
+void add(vector < edge > &E, int v, int to, int f, int c) {
+    edge nw;
+    nw.v = v, nw.to = to, nw.f = 0, nw.c = c, nw.cap = f, nw.obr = int(E.size() + 1);
+    E.pb(nw);
+    nw.v = to, nw.to = v, nw.f = 0, nw.c = -c, nw.cap = 0, nw.obr = int(E.size() - 1);
+    E.pb(nw);
 }
 
-void bellmanFord(int s, int dist[]) {
-    fill(dist, dist + nodes, INT_MAX);
+void tru(int s) {
     dist[s] = 0;
-    int qt = 0;
-    q[qt++] = s;
-    for (int qh = 0; (qh - qt) % nodes != 0; qh++) {
-        int u = q[qh % nodes];
-        inqueue[u] = false;
-        for (int i = 0; i < (int) graph[u].size(); i++) {
-            Edge &e = graph[u][i];
-            if (e.cap <= e.f) continue;
-            int v = e.to;
-            int ndist = dist[u] + e.cost;
-            if (dist[v] > ndist) {
-                dist[v] = ndist;
-                if (!inqueue[v]) {
-                    inqueue[v] = true;
-                    q[qt++ % nodes] = v;
-                }
+    bool f;
+    for (int i(0); i < n; ++i) {
+        f = 0;
+        for (int j(0); j < int(E.size()); ++j){
+            auto to = E[j];
+            if (to.cap == to.f)
+                continue;
+            if (dist[to.v] != INF && dist[to.v] + to.c < dist[to.to]) {
+                dist[to.to] = dist[to.v] + to.c;
+                bat[to.to] = j;
+                f = 1;
             }
+        }
+        if (!f){
+            break;
         }
     }
 }
 
-pii minCostFlow(int s, int t, int maxf) {
-    bellmanFord(s, pot);
-    int flow = 0;
-    int flowCost = 0;
-    while (flow < maxf) {
-        priority_queue<ll, vector<ll>, greater<ll> > q;
-        q.push(s);
-        fill(prio, prio + nodes, INT_MAX);
-        prio[s] = 0;
-        curflow[s] = INT_MAX;
-        while (!q.empty()) {
-            ll cur = q.top();
-            int d = cur >> 32;
-            int u = cur;
-            q.pop();
-            if (d != prio[u])
-                continue;
-            for (int i = 0; i < (int) graph[u].size(); i++) {
-                Edge &e = graph[u][i];
-                int v = e.to;
-                if (e.cap <= e.f) continue;
-                int nprio = prio[u] + e.cost + pot[u] - pot[v];
-                if (prio[v] > nprio) {
-                    prio[v] = nprio;
-                    q.push(((ll) nprio << 32) + v);
-                    prevnode[v] = u;
-                    prevedge[v] = i;
-                    curflow[v] = min(curflow[u], e.cap - e.f);
-                }
-            }
-        }
-        if (prio[t] == INT_MAX)
-            break;
-        for (int i = 0; i < nodes; i++)
-            pot[i] += prio[i];
-        int df = min(curflow[t], maxf - flow);
-        flow += df;
-        for (int v = t; v != s; v = prevnode[v]) {
-            Edge &e = graph[prevnode[v]][prevedge[v]];
-            e.f += df;
-            graph[v][e.rev].f -= df;
-            flowCost += df * e.cost;
-        }
+
+
+signed main() {
+    cin.tie(0);
+    cout.tie(0);
+    ios_base::sync_with_stdio(0);
+#ifdef LOCAL
+    freopen("input.txt", "r", stdin);
+    freopen("output.txt", "w", stdout);
+#else
+//    freopen("input.txt", "r", stdin);
+//    freopen("output.txt", "w", stdout);
+#endif // LOCAL
+    cin >> n >> m;
+    for (int i(0); i < m; ++i) {
+        int a, b, c, g;
+        cin >> a >> b >> c >> g;
+        --a, -- b;
+        add(E, a, b, c, g);
     }
-    return make_pair(flow, flowCost);
+    int s, t;
+    cin >> s >> t;
+    --s, --t;
+    add(E, n, s, INF, 0);
+    add(E, t, n + 1, INF, 0);
+    int flow = 0;
+    ll cost = 0;
+    n += 2;
+    while (true) {
+        for (int i(0); i < n; ++i) {
+            dist[i] = INF;
+        }
+        tru(n - 2);
+        if (dist[n - 1] == INF)
+            break;
+        int addflow = INF;
+        for (int v(n - 1); v != n - 2; v = E[bat[v]].v) {
+            addflow = min(addflow, E[bat[v]].cap - E[bat[v]].f);
+        }
+        for (int v(n - 1); v != n - 2; v = E[bat[v]].v) {
+            E[bat[v]].f += addflow;
+            E[E[bat[v]].obr].f -= addflow;
+            cost += 1ll * E[bat[v]].c * addflow;
+        }
+        flow += addflow;
+    }
+    cout << cost << endl;
+
+    return 0;
 }
