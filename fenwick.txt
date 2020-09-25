@@ -1,0 +1,29 @@
+struct fenwick{
+   ordered_set t[N];
+
+   void add(int x, int y){
+       for (int i = x; i < N; i += i & -i){
+          t[i].insert(y);
+       }
+   }
+
+   void del(int x, int y){
+      for (int i = x; i < N; i += i & -i){
+          t[i].erase(y);
+      }
+   }
+
+   int query(int x, int l, int r){
+     int res = 0;
+     for (int i = x; i; i -= i & -i){
+        res += t[i].order_of_key(r + 1) - t[i].order_of_key(l);
+     }
+     return res;
+   }
+
+   int query(int l, int r, int l1, int r1){
+     return query(r, l1, r1) - query(l - 1, l1, r1);
+   }
+
+   fenwick(){}
+} T;

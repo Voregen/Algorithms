@@ -1,0 +1,53 @@
+struct node{
+   int to[2];
+   int cnt[2];
+
+   node(){
+      to[0] = to[1] = -1;
+      cnt[0] = cnt[1] = 0;
+   }
+};
+
+struct trie_bit{
+     vector <node> t;
+     vector <int> cnt;
+
+     void add(ll x){
+         int v = 0;
+         for (int i = 60; i >= 0; i--){
+            int bit = ((1ll << i) & x) > 0;
+            if (t[v].to[bit] == -1){
+                t[v].to[bit] = t.size();
+                t.pb(node());
+            }
+            t[v].cnt[bit]++;
+            v = t[v].to[bit];
+         }
+     }
+
+     void del(ll x){
+         int v = 0;
+         for (int i = 60; i >= 0; i--){
+            int bit = ((1ll << i) & x) > 0;
+            t[v].cnt[bit]--;
+            v = t[v].to[bit];
+         }
+     }
+
+     ll get(ll x){
+         ll res = 0;
+         int v = 0;
+         for (int i = 60; i >= 0; i--){
+            int bit = ((1ll << i) & x) == 0;
+            if (t[v].cnt[bit] == 0) bit ^= 1;
+            else res += (1ll << i);
+            v = t[v].to[bit];
+         }
+         return res;
+     }
+
+     trie_bit(){
+         t.pb(node());
+         cnt.pb(0);
+     }
+} T;

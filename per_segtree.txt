@@ -1,0 +1,165 @@
+#include <bits/stdc++.h>
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+
+//#pragma GCC optimize("Ofast")
+//#pragma GCC target("sse,sse2,sse3,ssse3,sse4,popcnt,abm,mmx,avx,tune=native")
+//#pragma GCC optimize("unroll-loops")
+
+#define F first
+#define S second
+#define pb push_back
+#define ll long long
+#define ld long double
+#define endl '\n'
+#define pii pair <int, int>
+#define pll pair <ll, ll>
+#define pld pair <ld, ld>
+#define ull unsigned long long
+
+using namespace std;
+using namespace __gnu_pbds;
+
+typedef tree <pii,null_type,less<pii>,rb_tree_tag,tree_order_statistics_node_update> ordered_set;
+
+const int N = 3e5 + 7;
+const int M = 1e9 + 7;
+const ll INF = 2e18 + 7;
+
+const int rx[8] = {-1, 0, 1, 0, 1, 1, -1, -1};
+const int ry[8] = {0, -1, 0, 1, 1, -1, 1, -1};
+
+mt19937 gen(chrono::high_resolution_clock::now().time_since_epoch().count());
+
+
+struct node {
+    int sum;
+    int ch_l;
+    int ch_r;
+    node() {
+        sum = 0;
+        ch_l = 0;
+        ch_r = 0;
+    }
+};
+
+struct segtree {
+    vector <node> all;
+    vector <int> root;
+    int n;
+
+    void build(int v, int l, int r) {
+        if (r - l == 0)
+            return;
+        int cur;
+        cur = all.size();
+        all.pb(all[v]);
+        all[v].ch_l = cur;
+        cur = all.size();
+        all.pb(all[v]);
+        all[v].ch_r = cur;
+        build(all[v].ch_l, l, (l + r) / 2);
+        build(all[v].ch_r, (l + r) / 2 + 1, r);
+    }
+
+    segtree(int sz) {
+        n = 1;
+        while (n < sz)
+            n <<= 1;
+        all.pb(node());
+        root.pb(0);
+        build(0, 0, n);
+    }
+
+    int modify(int v, int l, int r, int p, int x) {
+        all.pb(all[v]);
+        v = all.size() - 1;
+        if (r - l == 0) {
+            all[v].sum += x;
+            return v;
+        }
+        if ((l + r) / 2 >= p) {
+            int cur_l = modify(all[v].ch_l, l, (l + r) / 2, p, x);
+            all[v].ch_l = cur_l;
+            all[v].sum = all[all[v].ch_l].sum + all[all[v].ch_r].sum;
+        } else {
+            int cur_r = modify(all[v].ch_r, (l + r) / 2 + 1, r, p, x);
+            all[v].ch_r = cur_r;
+            all[v].sum = all[all[v].ch_l].sum + all[all[v].ch_r].sum;
+        }
+        return v;
+    }
+
+    void modify(int p, int x) {
+        int cur_root = modify(root.back(), 0, n, p, x);
+        root.pb(cur_root);
+    }
+
+    int get(int v, int cl, int cr, int l, int r) {
+        if (cl > r || cr < l)
+            return 0;
+        if (l <= cl && cr <= r) {
+            return all[v].sum;
+        }
+        return get(all[v].ch_l, cl, (cl + cr) / 2, l, r) + get(all[v].ch_r, (cl + cr) / 2 + 1, cr, l, r);
+    }
+
+    int get(int i, int l, int r) {
+        return get(root[i], 0, n, l, r);
+    }
+
+    int kth(int v1, int v2, int k, int kek) {
+        int l = 0, r = n;
+        while (r - l > 0) {
+            int mid = (l + r) / 2;
+            if (all[all[v2].ch_l].sum - all[all[v1].ch_l].sum >= k) {
+                v2 = all[v2].ch_l;
+                v1 = all[v1].ch_l;
+                r = mid;
+            } else {
+                k -= all[all[v2].ch_l].sum - all[all[v1].ch_l].sum;
+                v2 = all[v2].ch_r;
+                v1 = all[v1].ch_r;
+                l = mid + 1;
+            }
+        }
+        return l;
+    }
+
+    int kth(int l, int r, int k) {
+        return kth(root[l], root[r], k, 0);
+    }
+};
+int main() {
+    ios_base::sync_with_stdio(0);
+    cin.tie(0);
+    cout.tie(0);
+#ifdef LOCAL
+    freopen("input.txt", "r", stdin);
+    freopen("output.txt", "w", stdout);
+#else
+    //freopen("permutation.in", "r", stdin);
+    //freopen("permutation.out", "w", stdout);
+#endif
+    int n;
+    cin >> n;
+    segtree t(N);
+    for (int i = 0; i < n; i++) {
+        int x;
+        cin >> x;
+        t.modify(x, 1);
+    }
+    int m;
+    cin >> m;
+    while (m--) {
+        int tt, l, r, x;
+        cin >> tt >> l >> r >> x;
+        if (tt == 1) {
+            cout << t.get(r, 1, x) - t.get(l - 1, 1, x) << endl;
+        }
+        else {
+            cout << t.kth(l - 1, r, x) << endl;
+        }
+    }
+    return 0;
+}

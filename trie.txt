@@ -1,0 +1,49 @@
+struct node {
+    int to[27] = {};
+    int cnt[27] = {};
+    int leaf = 0;
+    multiset <int> all;
+
+    node() {
+    }
+};
+
+
+struct trie {
+    vector <node> t;
+
+    void add(string &s) {
+        int v = 0;
+        int it = 0;
+        for (auto i : s) {
+            if (t[v].cnt[i - 'a'] == 0) {
+                t[v].to[i - 'a'] = t.size();
+                t.pb(node());
+            }
+            t[v].cnt[i - 'a']++;
+            v = t[v].to[i - 'a'];
+            it++;
+        }
+        t[v].leaf = 1;
+        t[v].all.insert(it);
+    }
+
+    void dfs(int v, int len) {
+        for (int i = 0; i < 26; i++) {
+            if (t[v].cnt[i]) {
+                int to = t[v].to[i];
+                dfs(to, len + 1);
+                if (t[v].all.size() < t[to].all.size()) swap(t[v].all, t[to].all);
+                for (auto j : t[to].all) t[v].all.insert(j);
+            }
+        }
+        if (v != 0 && !t[v].all.empty() && !t[v].leaf) {
+            t[v].all.erase(t[v].all.find(*t[v].all.rbegin()));
+            t[v].all.insert(len);
+        }
+    }
+
+    trie() {
+        t.pb(node());
+    }
+} T;
